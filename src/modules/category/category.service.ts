@@ -1,16 +1,16 @@
 import { HttpException, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { Category } from "src/schemas/category.schema";
+import { InjectRepository } from "@nestjs/typeorm";
 import { ICategoryCreate } from "src/types/category";
+import { In, Repository } from "typeorm";
+import { Category } from "./category.entity";
 
 @Injectable()
 export class CategoryService {
-  constructor(@InjectModel(Category.name) private categoryModel: Model<Category>) { }
+  constructor(@InjectRepository(Category) private categoryRepository: Repository<Category>) { }
 
   async getAllCategories(): Promise<Category[]> {
     try {
-      return await this.categoryModel.find();
+      return await this.categoryRepository.find();
     } catch (error) {
       console.error(error);
       throw new HttpException({
@@ -24,10 +24,26 @@ export class CategoryService {
 
   }
 
+  async findMultipleCategoriesByIds(ids: number[]) {
+    try {
+      const categories = await this.categoryRepository.find({ where: { id: In(ids) }})
+      return categories;
+    } catch (error) {
+      console.error(error);
+      throw new HttpException({
+        success: false,
+        messages: ["Something went wrong"],
+        data: [],
+        status: 500,
+        error,
+      }, 200)
+    }
+  }
+
   async createCategory(category: ICategoryCreate) {
     try {
-      const newCategory = await this.categoryModel.create(category);
-      return newCategory;
+      const newCategory = await this.categoryRepository.create(category);
+      return await this.categoryRepository.save(newCategory);
     } catch (error) {
       console.error(error);
       throw new HttpException({
@@ -43,7 +59,7 @@ export class CategoryService {
 
   async getCategoryById(id: string): Promise<Category> {
     try {
-      const category = await this.categoryModel.findById(id);
+      const category = await this.categoryRepository.findOneBy({ id: parseInt(id) });
       if (!category) {
         throw new HttpException("Category not found", 404)
       }
@@ -60,12 +76,10 @@ export class CategoryService {
     }
   }
 
-  async updateCategory(id: string, data: ICategoryCreate): Promise<Category> {
+  async updateCategory(id: string, data: ICategoryCreate) {
     try {
-      const updatedCategory = await this.categoryModel.findByIdAndUpdate({
-        _id: id,
-      }, data)
-      if (!updatedCategory) {
+      const category = await this.categoryRepository.findOneBy({ id: parseInt(id) });
+      if (!category) {
         throw new HttpException({
           success: false,
           messages: ["Category not found"],
@@ -73,7 +87,12 @@ export class CategoryService {
           data: [],
         }, 200)
       }
-      return updatedCategory;
+      category.name = data.name;
+      category.description = data.description;
+      category.image = data.image;
+      const result = await this.categoryRepository.save(category);
+      
+      return result;
     } catch (error) {
       console.error(error);
       throw new HttpException({
@@ -86,9 +105,9 @@ export class CategoryService {
     }
   }
 
-  async deleteCategory(id: string): Promise<Category> {
+  async deleteCategory(id: string) {
     try {
-      const deletedCategory = await this.categoryModel.findByIdAndDelete(id);
+      const deletedCategory = await this.categoryRepository.delete(id);
       if (!deletedCategory) {
         throw new HttpException({
           success: false,

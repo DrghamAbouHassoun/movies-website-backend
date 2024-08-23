@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument, Types } from "mongoose";
+import { HydratedDocument } from "mongoose";
 
 export type MovieDocument = HydratedDocument<Movie>;
 
@@ -14,11 +14,11 @@ export class Movie {
     @Prop({ required: true })
     releaseDate: Date;
 
-    @Prop({ type: [Types.ObjectId], ref: "Category" })
-    categories: string[];
+    @Prop({ type: [Number], ref: "Category" })
+    categories: number[];
 
-    @Prop({ type: [Types.ObjectId], ref: "Actor" })
-    actors: string[];
+    @Prop({ type: [Number], ref: "Actor" })
+    actors: number[];
 
     @Prop({ type: String })
     director?: string[];

@@ -23,7 +23,7 @@ export class CategoryController {
     return {
       success: true,
       status: 200,
-      messages: ["Fetched successfully"],
+      messages: ["Created successfully"],
       data: newCategory,
     }
   }
@@ -56,7 +56,7 @@ export class CategoryController {
     return {
       success: true,
       status: 200,
-      messages: ["Updated successfully"],
+      messages: ["Deleted successfully"],
       data: deletedCategory,
     }
   }

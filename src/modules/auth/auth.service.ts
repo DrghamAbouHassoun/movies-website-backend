@@ -3,72 +3,63 @@ import { UserService } from "../users/user.service";
 import * as bcrypt from 'bcrypt';
 import { IUserCreate } from "src/types/user";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService {
   constructor(
+    private configService: ConfigService,
     private usersService: UserService,
     private jwtService: JwtService,
   ) { }
 
+  public salt = bcrypt.genSaltSync()
+
   async signIn({ email, password }: { email: string, password: string }) {
-    try {
-      const user = await this.usersService.findUserByEmail(email);
-      if (!await bcrypt.compare(user.password, password)) {
-        throw new HttpException({
-          success: false,
-          messages: ["Invalid email or password"],
-          data: [],
-          status: 401,
-        }, 200);
-      }
-      
-      const payload = {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role,
-      }
-      return {
-        access_token: await this.jwtService.signAsync(payload),
-      }
-    } catch (error) {
-      console.log(error);
+    const user = await this.usersService.findUserByEmail(email);
+    console.log("User: ", user)
+    console.log("Password, email: ", password, user.password);
+    console.log("Result: ", bcrypt.compareSync(password, user.password));
+    if (!bcrypt.compareSync(password, user.password)) {
       throw new HttpException({
         success: false,
-        messages: ["Something went wrong"],
+        messages: ["Invalid email or password"],
         data: [],
-        status: 500,
-        error,
-      }, 200)
+        status: 401,
+      }, 200);
+    }
+ 
+    const payload = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    }
+    const jwtSecret = this.configService.get<string>('JWT_SECRET')
+    return {
+      access_token: await this.jwtService.signAsync(payload, { secret: jwtSecret }),
     }
   }
 
-  async register (data: IUserCreate) {
-    try {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      const newUser = await this.usersService.createUserAccount({...data, password: hashedPassword });
-      
-      const payload = {
-        _id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        mobile: newUser.mobile,
-        role: newUser.role,
-      }
-      return {
-        access_token: await this.jwtService.signAsync(payload),
-      }
-    } catch (error) {
-      console.log(error);
-      throw new HttpException({
-        success: false,
-        messages: ["Something went wrong 2"],
-        data: [],
-        status: 500,
-        error,
-      }, 200)
+  async register(data: IUserCreate) {
+    const hashedPassword = await bcrypt.hash(data.password, this.salt);
+    const newUser = await this.usersService.createUserAccount({ ...data, password: hashedPassword });
+
+    const payload = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      role: newUser.role,
     }
+    const jwtSecret = this.configService.get<string>('JWT_SECRET')
+    return {
+      access_token: await this.jwtService.signAsync(payload, { secret: jwtSecret }),
+    }
+  }
+
+  async profile(userId: number) {
+    this.usersService.findUserById(userId);
   }
 }

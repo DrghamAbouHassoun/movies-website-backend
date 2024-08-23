@@ -4,12 +4,12 @@ interface IUserReturn {
     _id: Types.ObjectId;
     name: string;
     email: string;
-    mobile: string;
+    phone: string;
 }
 
 export interface IUserCreate {
     name: string;
     email: string;
     password: string;
-    mobile: string;
+    phone: string;
 }

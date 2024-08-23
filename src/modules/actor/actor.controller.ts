@@ -19,7 +19,7 @@ export class ActorController {
 
   @Post()
   async addActor(@Body() data: ActorValidator) {
-    const actor = await this.actorService.addActor(data);
+    const actor = await this.actorService.addActor({ name: data.name, image: data.image, bio: data.bio, birthdate: data.birthdate });
     return {
       success: true,
       messages: ["Actor added successfully"],
@@ -29,7 +29,7 @@ export class ActorController {
   }
 
   @Get("/:id")
-  async getActorById(@Param("id") id: string) { 
+  async getActorById(@Param("id") id: string) {
     const actor = await this.actorService.getActorById(id);
     return {
       success: true,
@@ -41,7 +41,12 @@ export class ActorController {
 
   @Put("/:id")
   async updateActor(@Param("id") id: string, @Body() actor: ActorValidator) {
-    const updatedActor = await this.actorService.updateActor(id, actor);
+    const updatedActor = await this.actorService.updateActor(id, { 
+      name: actor.name, 
+      image: actor.image, 
+      bio: actor.bio, 
+      birthdate: actor.birthdate 
+    });
     return {
       success: true,
       messages: ["Actor updated successfully"],

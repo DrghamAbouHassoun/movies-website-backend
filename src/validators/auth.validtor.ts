@@ -18,7 +18,7 @@ export class RegisterValidator {
     @IsString()
     @IsNotEmpty()
     @IsPhoneNumber()
-    mobile: string;
+    phone: string;
 }
 
 export class SignInValidator {

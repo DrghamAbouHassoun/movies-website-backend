@@ -1,4 +1,4 @@
-import { ArrayMinSize, IsArray, IsDate, IsNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
+import { ArrayMinSize, IsArray, IsDateString, IsNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
 
 export class MovieValidator {
     @IsString()
@@ -9,18 +9,18 @@ export class MovieValidator {
     @IsNotEmpty()
     description: string;
 
-    @IsDate()
+    @IsDateString()
     releaseDate: Date;
 
     @IsArray()
-    @IsString({ each: true })
+    @IsNumber({}, { each: true })
     @ArrayMinSize(1)
-    categories: string[];
+    categories: number[];
 
     @IsArray()
-    @IsString({ each: true })
+    @IsNumber({}, { each: true })
     @ArrayMinSize(1)
-    actors: string[];
+    actors: number[];
 
     @IsNumber()
     @Min(1)
@@ -33,7 +33,7 @@ export class MovieValidator {
     @IsString()
     movieUrl?: string;
 
-    @IsString()
+    @IsNumber()
     duration?: number;
 
     @IsString()

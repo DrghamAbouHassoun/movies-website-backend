@@ -1,4 +1,4 @@
-import { IsDate, IsNotEmpty, IsString } from "class-validator";
+import { IsDateString, IsEmpty, IsNotEmpty, IsString } from "class-validator";
 
 export class ActorValidator {
     @IsString()
@@ -8,6 +8,11 @@ export class ActorValidator {
     @IsString()
     bio?: string;
 
-    @IsDate()
+    @IsString()
+    @IsDateString()
     birthdate?: Date;
+
+    @IsString()
+    @IsEmpty()
+    image?: string;
 }

@@ -1,16 +1,25 @@
 import { Injectable, HttpException } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { Movie } from "src/schemas/movies.schema";
+import { InjectRepository } from "@nestjs/typeorm";
 import { IMovieCreate } from "src/types/movie";
+import { Repository } from "typeorm";
+import { Movie } from "./movie.entity";
+import { CategoryService } from "../category/category.service";
+import { ActorService } from "../actor/actor.service";
+import { MediaService } from "../media/media.service";
+import { Media } from "../media/media.entity";
 
 @Injectable()
 export class MovieService {
-  constructor(@InjectModel(Movie.name) private movieModel: Model<Movie>) { }
+  constructor(
+    @InjectRepository(Movie) private movieRepository: Repository<Movie>,
+    private categoryService: CategoryService,
+    private actorService: ActorService,
+    private mediaService: MediaService,
+  ) { }
 
   async getMovies(): Promise<Movie[]> {
     try {
-      const movies = await this.movieModel.find();
+      const movies = await this.movieRepository.find();
       return movies;
     } catch (error) {
       console.error(error);
@@ -26,8 +35,22 @@ export class MovieService {
 
   async createMovie(data: IMovieCreate): Promise<Movie> {
     try {
-      const movie = await this.movieModel.create(data);
-      return movie;
+      const categories = await this.categoryService.findMultipleCategoriesByIds(data.categories.map(item => item))
+      const actors = await this.actorService.findMultipleActorsByIds(data.actors.map(item => item));
+
+      const trailer = data.trailer ? await this.mediaService.getMediaById(data.trailer) : undefined
+      const poster = data.poster ? await this.mediaService.getMediaById(data.poster): undefined;
+      const movieVideo = data.movieUrl ? await this.mediaService.getMediaById(data.movieUrl) : undefined;
+
+      const movie = this.movieRepository.create({
+        ...data,
+        actors: actors,
+        categories: categories,
+        trailer: trailer,
+        poster: poster,
+        movieVideo: movieVideo,
+      });
+      return this.movieRepository.save(movie);
     } catch (error) {
       console.error(error);
       throw new HttpException({
@@ -40,9 +63,9 @@ export class MovieService {
     }
   }
 
-  async getMovieById(id: string): Promise<Movie> {
+  async getMovieById(id: number): Promise<Movie> {
     try {
-      const movie = await this.movieModel.findById(id);
+      const movie = await this.movieRepository.findOneBy({ id: id });
       if (!movie) {
         throw new HttpException({
           success: false,
@@ -64,9 +87,16 @@ export class MovieService {
     }
   }
 
-  async updateMovie(id: string, data: IMovieCreate) {
+  async updateMovie(id: number, data: IMovieCreate) {
     try {
-      const updatedMovie = await this.movieModel.findByIdAndUpdate(id, data);
+      const categories = await this.categoryService.findMultipleCategoriesByIds(data.categories.map(item => item))
+      const actors = await this.actorService.findMultipleActorsByIds(data.actors.map(item => item));
+
+      const trailer = data.trailer ? await this.mediaService.getMediaById(data.trailer) : undefined
+      const poster = data.poster ? await this.mediaService.getMediaById(data.poster): undefined;
+      const movieVideo = data.movieUrl ? await this.mediaService.getMediaById(data.movieUrl) : undefined;
+
+      const updatedMovie = await this.movieRepository.findOneBy({ id: id });
       if (!updatedMovie) {
         throw new HttpException({
           success: false,
@@ -75,7 +105,19 @@ export class MovieService {
           status: 404,
         }, 200)
       }
-      return updatedMovie;
+
+      updatedMovie.title = data.title;
+      updatedMovie.trailer = trailer;
+      updatedMovie.description = data.description;
+      updatedMovie.duration = data.duration;
+      updatedMovie.movieVideo = movieVideo;
+      updatedMovie.poster = poster;
+      updatedMovie.rate = data.rate;
+      updatedMovie.releaseDate = data.releaseDate;
+      updatedMovie.actors = actors;
+      updatedMovie.categories = categories;
+
+      return await this.movieRepository.save(updatedMovie);
     } catch (error) {
       console.error(error);
       throw new HttpException({
@@ -90,7 +132,7 @@ export class MovieService {
 
   async deleteMovie(id: string) {
     try {
-      const deletedMovie = await this.movieModel.findByIdAndDelete(id);
+      const deletedMovie = await this.movieRepository.delete({ id: parseInt(id) });
       if (!deletedMovie) {
         throw new HttpException({
           success: false,
@@ -111,4 +153,45 @@ export class MovieService {
       }, 200);
     }
   }
+
+  async updateMovieMedia (
+    trailerId?: string, 
+    posterId?: string, 
+    movieVideoId?: string
+  ): Promise<{
+    trailer: Media | undefined; 
+    poster: Media | undefined; 
+    movieVideo: Media | undefined
+  }> {
+    const trailer = await this.mediaService.getMediaById(trailerId);
+    const poster = await this.mediaService.getMediaById(posterId);
+    const movieVideo = await this.mediaService.getMediaById(movieVideoId)
+
+    return { trailer, poster, movieVideo };
+  }
+
+  async addTrailer (movieId: number, trailerId: string) {
+    const movie = await this.movieRepository.findOneBy({ id: movieId });
+    const trailer = await this.mediaService.getMediaById(trailerId);
+    movie.trailer = trailer;
+    return await this.movieRepository.save(movie);
+  }
+
+  async addPoster (movieId: number, posterId: string) {
+    const movie = await this.movieRepository.findOneBy({ id: movieId });
+    const poster = await this.mediaService.getMediaById(posterId);
+    movie.poster = poster;
+    return await this.movieRepository.save(movie);
+  }
+
+  async addMovieVideo (movieId: number, movieVideoId: string) {
+    const movie = await this.movieRepository.findOneBy({ id: movieId });
+    const movieVideo = await this.mediaService.getMediaById(movieVideoId);
+    movie.movieVideo = movieVideo;
+    return await this.movieRepository.save(movie);
+  }
+
+  // async fetchMoviesByCategoryId(categoryId: number) {
+  //   this.movieRepository.findOneBy({ categories})
+  // }
 }
