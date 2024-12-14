@@ -1,25 +1,33 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { ActorService } from "./actor.service";
-import { ActorValidator } from "src/validators/actor.validator";
+import { ActorDto, FindActorsDto } from "./actor.dto";
 
 @Controller("/actors")
 export class ActorController {
   constructor(private actorService: ActorService) { }
 
   @Get()
-  async getAllActors() {
-    const actors = await this.actorService.getAllActors();
+  async getAllActors(@Query() findActorsQuery: FindActorsDto) {
+    const [actors, count] = await this.actorService.getAllActors(findActorsQuery);
     return {
       success: true,
       messages: ["Actors fetched successfully"],
       data: actors,
+      metaData: {
+        count
+      },
       status: 200,
     }
   }
 
   @Post()
-  async addActor(@Body() data: ActorValidator) {
-    const actor = await this.actorService.addActor({ name: data.name, image: data.image, bio: data.bio, birthdate: data.birthdate });
+  async addActor(@Body() data: ActorDto) {
+    const actor = await this.actorService.addActor({ 
+      name: data.name, 
+      bio: data.bio, 
+      birthdate: data.birthdate,
+      imageId: data.imageId,
+    });
     return {
       success: true,
       messages: ["Actor added successfully"],
@@ -40,12 +48,12 @@ export class ActorController {
   }
 
   @Put("/:id")
-  async updateActor(@Param("id") id: string, @Body() actor: ActorValidator) {
+  async updateActor(@Param("id") id: string, @Body() actor: ActorDto) {
     const updatedActor = await this.actorService.updateActor(id, { 
       name: actor.name, 
-      image: actor.image, 
       bio: actor.bio, 
-      birthdate: actor.birthdate 
+      birthdate: actor.birthdate,
+      imageId: actor.imageId,
     });
     return {
       success: true,

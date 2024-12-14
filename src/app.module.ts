@@ -16,6 +16,12 @@ import { MediaModule } from './modules/media/media.module';
 import { Media } from './modules/media/media.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { Show } from './modules/shows/show.entity';
+import { Season } from './modules/seasons/season.entity';
+import { Episode } from './modules/episodes/episode.entity';
+import { ShowModule } from './modules/shows/show.module';
+import { SeasonModule } from './modules/seasons/seasons.module';
+import { EpisodeModule } from './modules/episodes/episode.module';
 
 @Module({
   imports: [
@@ -27,7 +33,7 @@ import { join } from 'path';
       username: "postgres",
       password: "lspassword",
       database: "movies-db",
-      entities: [Category, Movie, Actor, User, Media],
+      entities: [Category, Movie, Actor, User, Media, Show, Season, Episode],
       synchronize: true,
     }),
     CategoryModule,
@@ -36,6 +42,9 @@ import { join } from 'path';
     UserModule,
     AuthModule,
     MediaModule,
+    ShowModule,
+    SeasonModule,
+    EpisodeModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, "..", "uploads"),
       serveRoot: "/media"

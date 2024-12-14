@@ -1,17 +1,35 @@
 import { HttpException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { IActorCreate } from "src/types/actor";
+import { IActorCreate, IFetchActorsParams } from "src/types/actor";
 import { Actor } from "./actor.entity";
-import { In, Repository } from "typeorm";
+import { ILike, In, Repository } from "typeorm";
+import { MediaService } from "../media/media.service";
 
 @Injectable()
 export class ActorService {
-  constructor(@InjectRepository(Actor) private actorRepository: Repository<Actor>) { };
+  constructor(
+    @InjectRepository(Actor) private actorRepository: Repository<Actor>,
+    private mediaService: MediaService,
+  ) { };
 
-  async getAllActors(): Promise<Actor[]> {
+  async getAllActors({ search, page, limit }: IFetchActorsParams): Promise<[Actor[], number]> {
     try {
-      const actors = await this.actorRepository.find();
-      return actors;
+      const actSearch = search || "";
+      const actPage = page ? page : 1;
+      const actLimit = limit ? limit : 10;
+      const [actors, count] = await this.actorRepository.findAndCount({
+        where: [
+          { name: ILike(`%${actSearch}%`) },
+          { bio: ILike(`%${actSearch}%`) },
+        ],
+        relations: {
+          image: true,
+        },
+        // select: { name: true, image: { name: true, id: true, alt: true }, bio: true, birthdate: true, updatedAt: true, createdAt: true  },
+        take: actLimit,
+        skip: (actPage - 1) * actLimit,
+      })
+      return [actors, count];
     } catch (error) {
       console.error(error);
       throw new HttpException({
@@ -42,7 +60,11 @@ export class ActorService {
 
   async addActor (actor: IActorCreate): Promise<Actor> {
     try {
-      const newActor = this.actorRepository.create(actor);
+      let media = null;
+      if (actor.imageId) {
+        media = await this.mediaService.getMediaById(actor.imageId)
+      }      
+      const newActor = this.actorRepository.create({...actor, image: media || undefined });
       return await this.actorRepository.save(newActor);
     } catch (error) {
       console.log(error);
@@ -58,7 +80,10 @@ export class ActorService {
 
   async getActorById (id: string) {
     try {
-      const actor = await this.actorRepository.findOneBy({ id: parseInt(id) });
+      const actor = await this.actorRepository.findOne({ 
+        where: { id: parseInt(id) },
+        relations: { image: true },
+      });
       if (!actor) {
         throw new HttpException({
           success: false,
@@ -82,6 +107,10 @@ export class ActorService {
 
   async updateActor (id: string, actor: IActorCreate) {
     try {
+      let media = null;
+      if (actor.imageId) {
+        media = await this.mediaService.getMediaById(actor.imageId)
+      }  
       const updatedActor = await this.actorRepository.findOneBy({id: parseInt(id)});
       if (!updatedActor) {
         throw new HttpException({
@@ -94,7 +123,7 @@ export class ActorService {
       updatedActor.name = actor.name;
       updatedActor.bio = actor.bio;
       updatedActor.birthdate = actor.birthdate;
-      updatedActor.image = actor.image;
+      updatedActor.image = media || undefined;
       return this.actorRepository.save(updatedActor);
     } catch (error) {
       console.error(error);

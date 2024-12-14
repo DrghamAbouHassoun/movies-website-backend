@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToMany, OneToOne, JoinColumn } from "typeorm";
 import { Movie } from "../movies/movie.entity";
+import { Media } from "../media/media.entity";
 
 @Entity()
 export class Actor {
@@ -9,8 +10,12 @@ export class Actor {
   @Column({ unique: true })
   name: string;
 
-  @Column({ nullable: true, default: "" })
-  image?: string;
+  // @Column({ nullable: true, default: "" })
+  // image?: string;
+
+  @OneToOne(() => Media)
+  @JoinColumn()
+  image?: Media;
 
   @Column({ type: "timestamp", default: new Date() })
   birthdate: Date;

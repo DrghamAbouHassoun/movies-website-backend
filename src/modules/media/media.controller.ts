@@ -1,16 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { MediaService } from "./media.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname } from "path";
+import { FindMediaDto } from "./media.dto";
 
 @Controller("/media")
 export class MediaController {
   constructor(private mediaService: MediaService) {}
 
   @Get("/")
-  async getAllMedia () {
-    const media = await this.mediaService.getAllMedia();
+  async getAllMedia (@Query() findMediaQuery: FindMediaDto) {
+    const media = await this.mediaService.getAllMedia(findMediaQuery);
     return {
       success: true,
       messages: [],
@@ -35,6 +36,7 @@ export class MediaController {
     @UploadedFile() file: Express.Multer.File,
     @Body() body: { alt: string }, 
   ) {
+    console.log("Reache fiel: ", file);
     const uploadedFile = await this.mediaService.saveFile({
       filename: file.filename,
       type: file.mimetype.split("/")[0],

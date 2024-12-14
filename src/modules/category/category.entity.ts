@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from "typeorm";
 import { Movie } from "../movies/movie.entity";
+import { Media } from "../media/media.entity";
 
 @Entity()
 export class Category {
@@ -12,8 +13,9 @@ export class Category {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ nullable: true, default: "" })
-  image: string;
+  @OneToOne(() => Media)
+  @JoinColumn()
+  image?: Media;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt: Date;

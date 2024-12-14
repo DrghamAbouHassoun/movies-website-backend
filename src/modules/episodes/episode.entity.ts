@@ -1,5 +1,7 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Media } from "../media/media.entity";
+import { Season } from "../seasons/season.entity";
+import { Show } from "../shows/show.entity";
 
 @Entity()
 export class Episode {
@@ -12,7 +14,7 @@ export class Episode {
   @Column({ type: "text", unique: true, nullable: true })
   title?: string
 
-  @Column({ type: "longtext", nullable: true })
+  @Column({ type: "text", nullable: true })
   description?: string;
 
   @OneToOne(() => Media)
@@ -22,4 +24,10 @@ export class Episode {
   @OneToOne(() => Media)
   @JoinColumn()
   episodeVideo?: Media;
+
+  @ManyToOne(() => Show, (show) => show.episodes)
+  show: Show
+
+  @ManyToOne(() => Season, (season) => season.episodes)
+  season: Season;
 }

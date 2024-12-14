@@ -1,6 +1,13 @@
+
 export interface IActorCreate {
     name: string;
     bio?: string;
-    image?: string;
+    imageId?: string;
     birthdate: Date;
+}
+
+export interface IFetchActorsParams {
+    search?: string;
+    page?: number;
+    limit?: number;
 }

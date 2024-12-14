@@ -1,8 +1,8 @@
 import { HttpException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Media } from "./media.entity";
-import { In, Repository } from "typeorm";
-import { IMediaCreate } from "src/types/media";
+import { ILike, In, Repository } from "typeorm";
+import { IFetchMediaParams, IMediaCreate } from "src/types/media";
 import * as path from "path";
 import * as fs from 'fs'
 
@@ -12,8 +12,19 @@ export class MediaService {
 
   private readonly uploadPath = path.join(process.cwd(), '/uploads');
 
-  async getAllMedia() {
-    return await this.mediaRepository.find();
+  async getAllMedia({ search, page, limit }: IFetchMediaParams) {
+    const actSearch = search || "";
+      const actPage = page ? page : 1;
+      const actLimit = limit ? limit : 10;
+    return await this.mediaRepository.findAndCount({
+      where: [
+        { name: ILike(`%${actSearch}%`) },
+        { alt: ILike(`%${actSearch}%`) },
+      ],
+      take: actLimit,
+      skip: (actPage - 1) * actLimit,
+      order: { createdAt: "ASC" } 
+    });
   }
 
   async saveFile(data: IMediaCreate) {

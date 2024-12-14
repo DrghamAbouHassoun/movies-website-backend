@@ -1,6 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Category } from "../category/category.entity";
 import { Actor } from "../actor/actor.entity";
+import { Episode } from "../episodes/episode.entity";
+import { Season } from "../seasons/season.entity";
 
 @Entity({ })
 export class Show {
@@ -35,4 +37,10 @@ export class Show {
   @ManyToMany(() => Actor, (actor) => actor.movies)
   @JoinTable()
   actors: Actor[]
+
+  @OneToMany(() => Season, (season) => season.show)
+  seasons: Season[]
+
+  @OneToMany(() => Episode, (episode) => episode.show)
+  episodes: Episode[]
 }

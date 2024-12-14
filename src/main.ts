@@ -22,10 +22,7 @@ async function bootstrap() {
       }, 200)
     }
   }))
-  // app.useStaticAssets({
-  //   root: join(__dirname, '..', 'public'),
-  //   prefix: '/public/',
-  // });
+  app.enableCors()
 
   await app.listen(process.env.PORT);
 }

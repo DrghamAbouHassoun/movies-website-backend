@@ -1,24 +1,31 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { CategoryService } from "./category.service";
-import { CategoryValidator } from "src/validators/category.validator";
+import { CategoryDto, FindCategoriesDto } from "./category.dto";
 
 @Controller("/categories")
 export class CategoryController {
   constructor(private categoryService: CategoryService) { }
 
   @Get("/")
-  async getCategories() {
-    const categories = await this.categoryService.getAllCategories();
+  async getCategories(@Query() findCategoriesQuery: FindCategoriesDto) {
+    const [categories, categoriesCount] = await this.categoryService.getAllCategories({ 
+      search: findCategoriesQuery.search,
+      page: findCategoriesQuery.page,
+      limit: findCategoriesQuery.limit,
+    });
     return {
       success: true,
       status: 200,
       messages: ["Fetched successfully"],
       data: categories,
+      metaData: {
+        count: categoriesCount,
+      }
     }
   }
 
   @Post("/")
-  async createCategory(@Body() category: CategoryValidator) {
+  async createCategory(@Body() category: CategoryDto) {
     const newCategory = await this.categoryService.createCategory(category);
     return {
       success: true,
@@ -30,7 +37,7 @@ export class CategoryController {
 
   @Get("/:id")
   async getCategoryById(@Param("id") id: string) {
-    const category = await this.getCategoryById(id);
+    const category = await this.categoryService.getCategoryById(id);
     return {
       success: category ? true : false,
       status: category ? 200 : 404,
@@ -40,7 +47,7 @@ export class CategoryController {
   }
 
   @Put("/:id")
-  async updateCategory(@Param("id") id: string, @Body() category: CategoryValidator) {
+  async updateCategory(@Param("id") id: string, @Body() category: CategoryDto) {
     const updatedCategory = await this.categoryService.updateCategory(id, category);
     return {
       success: true,
